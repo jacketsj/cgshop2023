@@ -10,6 +10,7 @@ set(SRC ${CMAKE_SOURCE_DIR}/src)
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 include_directories("${SRC}")
 
+#set(CMAKE_CXX_FLAGS "-Wall -pthread -O3 -mavx -fopenmp -g -fsanitize=address")
 set(CMAKE_CXX_FLAGS "-Wall -pthread -O3 -mavx -fopenmp -g")
 
 include(./cmake/CPM.cmake)  # Package manager for simple requirements.
