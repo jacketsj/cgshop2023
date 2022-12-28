@@ -57,6 +57,8 @@ public:
 	explicit Solution(std::vector<SimplePolygon>&& polygons)
 			: m_polygons{std::move(polygons)} {}
 
+	void write(std::ostream& output, const std::string& name);
+
 	[[nodiscard]] const std::vector<SimplePolygon>& polygons() const noexcept {
 		return m_polygons;
 	}

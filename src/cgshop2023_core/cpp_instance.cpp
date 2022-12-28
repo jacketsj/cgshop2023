@@ -23,6 +23,25 @@ static void write_point(std::ostream& output, const P& p) {
 				 << ", \"y\": " << int(std::round(CGAL::to_double(p.y()))) << "}";
 }
 
+template <typename V>
+static void write_num_exact(std::ostream& output, const V& v) {
+	auto gmpq = CGAL::Gmpq(v.exact());
+	output << "{\"num\": ";
+	output << gmpq.numerator();
+	output << ",\"den\": ";
+	output << gmpq.denominator();
+	output << "}";
+}
+
+template <typename P>
+static void write_point_exact(std::ostream& output, const P& p) {
+	output << "{\"x\": ";
+	write_num_exact(output, p.x());
+	output << ", \"y\": ";
+	write_num_exact(output, p.y());
+	output << "}";
+}
+
 template <typename PC>
 static void write_point_container(std::ostream& out, const PC& c) {
 	out << '[';
@@ -35,6 +54,35 @@ static void write_point_container(std::ostream& out, const PC& c) {
 	}
 	write_point(out, *last);
 	out << ']';
+}
+
+template <typename PC>
+static void write_point_container_exact(std::ostream& out, const PC& c) {
+	out << '[';
+	auto beg = c.begin();
+	auto last = c.end();
+	--last;
+	for (; beg != last; ++beg) {
+		write_point_exact(out, *beg);
+		out << ", ";
+	}
+	write_point_exact(out, *last);
+	out << ']';
+}
+
+template <typename PCC>
+static void write_point_container_container_exact(std::ostream& out,
+																									const PCC& c) {
+	out << "\"polygons\": [\n";
+	auto beg = c.begin();
+	auto last = c.end();
+	--last;
+	for (; beg != last; ++beg) {
+		write_point_container_exact(out, *beg);
+		out << ",\n";
+	}
+	write_point_container_exact(out, *last);
+	out << "\n]";
 }
 
 void Instance::write(std::ostream& output, const std::string& name) {
@@ -62,6 +110,16 @@ void Instance::write(std::ostream& output, const std::string& name) {
 		output << "\"holes\": []";
 	}
 	output << "}\n";
+}
+
+void Solution::write(std::ostream& output, const std::string& name) {
+	output << '{';
+	write_kv(output, "type", "CGSHOP2023_Instance");
+	output << ",\n";
+	write_kv(output, "instance", name);
+	output << ",\n";
+	write_point_container_container_exact(output, polygons());
+	output << "}";
 }
 
 static Kernel::FT int64_to_cgal_exact(std::int64_t v) {
