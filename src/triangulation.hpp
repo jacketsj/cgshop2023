@@ -9,6 +9,7 @@
 #include <CGAL/Vector_2.h>
 #include <CGAL/draw_triangulation_2.h>
 #include <iostream>
+#include <utility>
 
 using namespace cgshop2023;
 using namespace std;
@@ -16,7 +17,7 @@ using namespace std;
 struct FaceInfo2 {
 	FaceInfo2() {}
 	int nesting_level;
-	bool in_domain() { return (nesting_level + 2) % 2 == 0; }
+	bool in_domain() { return (nesting_level + 2) % 2 == 1; }
 };
 
 typedef CGAL::Epeck K;
@@ -30,6 +31,17 @@ typedef CDT::Point Point;
 typedef CDT::Face_handle Face_handle;
 typedef CDT::Vertex_handle Vertex_handle;
 typedef CGAL::Vector_2<K> Vector;
+
+set<pair<Vertex_handle, Vertex_handle>> constrained_edges;
+
+pair<Vertex_handle, Vertex_handle> edge_vertices(CDT::Edge e) {
+	return make_pair(e.first->vertex((e.second + 1) % 3),
+									 e.first->vertex((e.second + 2) % 3));
+}
+
+bool constrained(CDT::Edge e) {
+	return constrained_edges.count(edge_vertices(e)) > 0;
+}
 
 void mark_domains(CDT& ct, Face_handle start, int index,
 									std::list<CDT::Edge>& border) {
@@ -48,19 +60,19 @@ void mark_domains(CDT& ct, Face_handle start, int index,
 				Face_handle n = fh->neighbor(i);
 				if (n->info().nesting_level == -1) {
 					auto tri = ct.triangle(fh);
-					if (ct.is_constrained(e)) {
+					// if (ct.is_constrained(e)) {
+					if (constrained(e)) {
 						// cerr << "Border edge found: e=(" << e.first->x() << endl;
-						// cerr << "Border edge found (" << tri[i].x() << ',' << tri[i].y()
-						//		 << ")-(" << tri[(i + 1) % 3].x() << ',' << tri[(i + 1) %
-						// 3].y()
-						//		 << ')' << endl;
+						// cerr << "Border edge found (" << tri[(i + 1) % 3].x() << ','
+						//		 << tri[(i + 1) % 3].y() << ")-(" << tri[(i + 2) % 3].x() <<
+						//','
+						//		 << tri[(i + 2) % 3].y() << ')' << endl;
 						border.push_back(e);
 					} else {
-						// cerr << "NON Border edge found (" << tri[i].x() << ',' <<
-						// tri[i].y()
-						//		 << ")-(" << tri[(i + 1) % 3].x() << ',' << tri[(i + 1) %
-						// 3].y()
-						//		 << ')' << endl;
+						// cerr << "NON Border edge found (" << tri[(i + 1) % 3].x() << ','
+						//		 << tri[(i + 1) % 3].y() << ")-(" << tri[(i + 1) % 3].x() <<
+						//','
+						//		 << tri[(i + 1) % 3].y() << ')' << endl;
 						queue.push_back(n);
 					}
 				}
@@ -81,7 +93,6 @@ void mark_domains(CDT& cdt) {
 	}
 	std::list<CDT::Edge> border;
 	mark_domains(cdt, cdt.infinite_face(), 0, border);
-	/*
 	while (!border.empty()) {
 		CDT::Edge e = border.front();
 		border.pop_front();
@@ -90,7 +101,6 @@ void mark_domains(CDT& cdt) {
 			mark_domains(cdt, n, e.first->info().nesting_level + 1, border);
 		}
 	}
-	*/
 }
 
 Solution basicTriangulation(const Instance& inst) {
@@ -115,8 +125,12 @@ Solution basicTriangulation(const Instance& inst) {
 		for (size_t i = 0; i < boundary.size(); ++i) {
 			size_t j = (i + 1) % boundary.size();
 			cdt.insert_constraint(boundary[i], boundary[j]);
+			constrained_edges.emplace(boundary[i], boundary[j]);
+			constrained_edges.emplace(boundary[j], boundary[i]);
 		}
 	}
+
+	mark_domains(cdt);
 
 	std::vector<SimplePolygon> polys;
 
@@ -130,13 +144,12 @@ Solution basicTriangulation(const Instance& inst) {
 		}
 		v /= 3;
 		Point p = Point(0, 0) + v;
-		// if (polygon_with_holes.holes().empty() ||
-		// CGAL::oriented_side(p, polygon_with_holes) != CGAL::NEGATIVE)
-		auto side = CGAL::oriented_side(p, polygon_with_holes);
-		if (side == CGAL::POSITIVE)
+		auto correct_side = it->info().in_domain();
+		if (correct_side)
 			polys.emplace_back(poly);
-		//}
 	}
+	cerr << "Total polys(triangles): " << polys.size() << endl;
+	// CGAL::draw(cdt);
 	return Solution(std::move(polys));
 
 	/*
