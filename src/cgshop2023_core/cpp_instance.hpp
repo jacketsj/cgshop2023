@@ -63,6 +63,10 @@ public:
 		return m_polygons;
 	}
 
+	[[nodiscard]] std::vector<SimplePolygon>& polygons_m() noexcept {
+		return m_polygons;
+	}
+
 	[[nodiscard]] size_t size() const { return m_polygons.size(); }
 
 	[[nodiscard]] const std::vector<Polygon>& coverage() const {

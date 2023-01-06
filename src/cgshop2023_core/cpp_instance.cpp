@@ -114,7 +114,7 @@ void Instance::write(std::ostream& output, const std::string& name) {
 
 void Solution::write(std::ostream& output, const std::string& name) {
 	output << '{';
-	write_kv(output, "type", "CGSHOP2023_Instance");
+	write_kv(output, "type", "CGSHOP2023_Solution");
 	output << ",\n";
 	write_kv(output, "instance", name);
 	output << ",\n";
