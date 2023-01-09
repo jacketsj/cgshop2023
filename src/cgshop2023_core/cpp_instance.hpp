@@ -29,6 +29,7 @@ public:
 
 	void write(std::ostream& output, const std::string& name);
 	static Instance read(std::istream& input, std::string& out_name);
+	static Instance read_file(const std::string& name);
 
 	[[nodiscard]] std::size_t num_vertices() const noexcept {
 		return std::transform_reduce(
@@ -58,6 +59,9 @@ public:
 			: m_polygons{std::move(polygons)} {}
 
 	void write(std::ostream& output, const std::string& name);
+	static Solution read(std::istream& input);
+	static Solution read_file(const std::string& name);
+	void write_if_better(const Instance& inst, const std::string& name);
 
 	[[nodiscard]] const std::vector<SimplePolygon>& polygons() const noexcept {
 		return m_polygons;

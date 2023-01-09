@@ -1,3 +1,4 @@
+#include "cgshop2023_core/verify.hpp"
 #include "cpp_instance.hpp"
 #include <exception>
 #include <nlohmann/json.hpp>
@@ -6,6 +7,34 @@
 #include <type_traits>
 
 namespace cgshop2023 {
+
+using std::cerr;
+using std::endl;
+using std::ifstream;
+using std::ofstream;
+using std::string;
+
+const string OUTPATH = "solutions/";
+const string INPATH = "instances/";
+const string INEXT = ".instance.json";
+const string OUTEXT = ".solution.json";
+
+string remove_ext(string s) {
+	size_t last_slash = s.find_last_of("/");
+	if (last_slash != string::npos)
+		s = s.substr(last_slash + 1);
+
+	size_t last_dot = s.find_first_of(".");
+	if (last_dot == string::npos)
+		return s;
+	return s.substr(0, last_dot);
+}
+
+string in_file_full(string name) { return INPATH + remove_ext(name) + INEXT; }
+
+string out_file_full(string name) {
+	return OUTPATH + remove_ext(name) + OUTEXT;
+}
 
 template <typename K, typename V>
 static void write_kv(std::ostream& output, const K& key, const V& value) {
@@ -138,6 +167,22 @@ static SimplePolygon json_to_points(const nlohmann::json& plist) {
 	return SimplePolygon(points.begin(), points.end());
 }
 
+static Kernel::FT rational_to_cgal_exact(const nlohmann::json& val) {
+	Kernel::FT num = int64_to_cgal_exact(val.at("num").get<std::int64_t>());
+	Kernel::FT dem = int64_to_cgal_exact(val.at("dem").get<std::int64_t>());
+	return num / dem;
+}
+
+static SimplePolygon json_to_rational_points(const nlohmann::json& plist) {
+	std::vector<Point> points;
+	for (const auto& p : plist) {
+		const auto& x = p.at("x");
+		const auto& y = p.at("y");
+		points.emplace_back(rational_to_cgal_exact(x), rational_to_cgal_exact(y));
+	}
+	return SimplePolygon(points.begin(), points.end());
+}
+
 Instance Instance::read(std::istream& input, std::string& out_name) {
 	nlohmann::json jsdata;
 	input >> jsdata;
@@ -154,6 +199,52 @@ Instance Instance::read(std::istream& input, std::string& out_name) {
 	}
 	return Instance(
 			Polygon(std::move(boundary), out_holes.begin(), out_holes.end()));
+}
+
+Solution Solution::read(std::istream& input) {
+	nlohmann::json jsdata;
+	input >> jsdata;
+	if (jsdata.at("type") != "CGSHOP2023_Solution") {
+		throw std::runtime_error("Not a CGSHOP 2023 solution file!");
+	}
+	const auto& polygons = jsdata.at("polygons");
+	std::vector<SimplePolygon> out_polygons;
+	for (const auto& p : polygons) {
+		out_polygons.emplace_back(json_to_rational_points(p));
+	}
+	return Solution(std::move(out_polygons));
+}
+
+Instance Instance::read_file(const std::string& name) {
+	auto fileloc = in_file_full(name);
+	ifstream ifs(fileloc);
+	string out_name;
+	Instance inst = Instance::read(ifs, out_name);
+	return inst;
+}
+
+Solution Solution::read_file(const std::string& name) {
+	auto fileloc = out_file_full(name);
+	ifstream ifs(fileloc);
+	string out_name;
+	Solution sol = Solution::read(ifs);
+	return sol;
+}
+
+void Solution::write_if_better(const Instance& inst, const std::string& name) {
+	Solution sol_old = Solution::read_file(name);
+	SolutionVerifier svO(&inst, &sol_old);
+	SolutionVerifier svN(&inst, this);
+	if (!svN.verify()) {
+		return;
+	}
+	if (!svO.verify() || size() < sol_old.size()) {
+		cerr << "Found solution improvement for " << name << ": " << sol_old.size()
+				 << "->" << size() << endl;
+		string out_name = out_file_full(name);
+		ofstream ofs(out_name);
+		write(ofs, remove_ext(name));
+	}
 }
 
 } // namespace cgshop2023
