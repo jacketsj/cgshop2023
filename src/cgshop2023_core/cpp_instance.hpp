@@ -61,7 +61,7 @@ public:
 	void write(std::ostream& output, const std::string& name);
 	static Solution read(std::istream& input);
 	static Solution read_file(const std::string& name);
-	void write_if_better(const Instance& inst, const std::string& name);
+	bool write_if_better(const Instance& inst, const std::string& name);
 
 	[[nodiscard]] const std::vector<SimplePolygon>& polygons() const noexcept {
 		return m_polygons;

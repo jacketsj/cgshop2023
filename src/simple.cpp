@@ -10,15 +10,71 @@
 using namespace cgshop2023;
 using namespace std;
 
-int main() {
+void use_threads(vector<string> todos, size_t num_threads,
+								 function<void(string)> process_file) {
+	vector<thread> pool;
+	mutex mtx;
+	size_t i = 0;
+	for (size_t t = 0; t < num_threads; ++t) {
+		pool.emplace_back([&]() {
+			while (true) {
+				string filename;
+				{
+					lock_guard<mutex> l(mtx);
+					if (i >= todos.size())
+						break;
+					filename = todos[i++];
+					cout << "thread " << t << " processing file " << (i + 1) << "/"
+							 << todos.size() << ": " << filename << endl;
+				}
+				process_file(filename);
+			}
+		});
+	}
+	for (size_t t = 0; t < num_threads; ++t) {
+		pool[t].join();
+	}
+}
+
+int main(int argc, char* argv[]) {
 	string filename;
 	vector<string> files;
 	while (cin >> filename) {
 		files.push_back(filename);
 	}
 
-	/*
-	bool orderBySize = true;
+	bool orderBySize = false;
+	bool init = false;
+	size_t num_threads = 1;
+	bool randomize = false;
+	bool localsearch = false;
+	size_t removal_attempts = 0;
+	size_t replacement_choices = 0;
+	for (int i = 0; i < argc; ++i) {
+		string cur(argv[i]);
+		auto eq = [&](const auto& a) { return cur == string(a); };
+		auto next = [&]() { return string(argv[++i]); };
+		if (eq("-h") || eq("--help")) {
+			cerr << "Example usage: ls instances | build/simple --order-by-size "
+							"--localsearch --randomize --num_threads 3 --removal_attempts "
+							"100 --replacement_choices 100"
+					 << endl;
+		} else if (eq("--order-by-size"))
+			orderBySize = true;
+		else if (eq("--init"))
+			init = true;
+		else if (eq("--threads"))
+			num_threads = stoi(next());
+		else if (eq("--randomize"))
+			randomize = true;
+		else if (eq("--localsearch"))
+			localsearch = true;
+		else if (eq("--removal-attempts"))
+			removal_attempts = stoi(next());
+		else if (eq("--replacement-choices"))
+			replacement_choices = stoi(next());
+	}
+
 	if (orderBySize) {
 		cerr << "Sorting inputs by total size\n";
 		vector<pair<int, string>> files_sized;
@@ -39,10 +95,41 @@ int main() {
 			files.push_back(filename);
 		}
 		cerr << "Finished sorting\n";
-		exit(0);
 	}
-	*/
 
+	if (init) {
+		use_threads(files, num_threads, [&](string filename) {
+			Instance inst = Instance::read_file(filename);
+			Solution oldsol = Solution::read_file(filename);
+			size_t original_size = oldsol.size();
+			Solution sol = basicTriangulation(inst);
+			if (localsearch) {
+				try_remove_all(inst, sol, randomize, removal_attempts,
+											 replacement_choices);
+			}
+			if (!sol.write_if_better(inst, filename)) {
+				cerr << "Did not see improvement to " << filename
+						 << " (previous:" << original_size << ", new:" << sol.size() << ")"
+						 << endl;
+			}
+		});
+	} else if (localsearch) {
+		use_threads(files, num_threads, [&](string filename) {
+			Instance inst = Instance::read_file(filename);
+			Solution sol = Solution::read_file(filename);
+			size_t original_size = sol.size();
+			try_remove_all(inst, sol, randomize, removal_attempts,
+										 replacement_choices);
+			if (!sol.write_if_better(inst, filename)) {
+				cerr << "Did not see improvement to " << filename
+						 << " (previous:" << original_size << ", new:" << sol.size() << ")"
+						 << endl;
+			}
+		});
+	}
+
+	// old
+	/*
 	for (auto& filename : files) {
 		auto fileloc = filename;
 		ifstream ifs(fileloc);
@@ -65,4 +152,5 @@ int main() {
 			sol.write(cout, out_name);
 		}
 	}
+	*/
 }

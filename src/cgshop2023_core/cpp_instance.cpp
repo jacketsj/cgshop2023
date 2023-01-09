@@ -231,12 +231,27 @@ Solution Solution::read_file(const std::string& name) {
 	return sol;
 }
 
-void Solution::write_if_better(const Instance& inst, const std::string& name) {
+bool solution_exists(const std::string& name) {
+	string filename = out_file_full(name);
+	std::ifstream ifs(filename);
+	return ifs.is_open();
+}
+
+bool Solution::write_if_better(const Instance& inst, const std::string& name) {
+	SolutionVerifier svN(&inst, this);
+	if (!solution_exists(name) && svN.verify()) {
+		cerr << "No existing saved solution for " << name
+				 << ". This one is valid, writing it (size=" << size() << ")." << endl;
+		string out_name = out_file_full(name);
+		ofstream ofs(out_name);
+		write(ofs, remove_ext(name));
+		return true;
+	}
 	Solution sol_old = Solution::read_file(name);
 	SolutionVerifier svO(&inst, &sol_old);
-	SolutionVerifier svN(&inst, this);
 	if (!svN.verify()) {
-		return;
+		cerr << "Warning: Tried to save invalid solution for " << name << endl;
+		return false;
 	}
 	if (!svO.verify() || size() < sol_old.size()) {
 		cerr << "Found solution improvement for " << name << ": " << sol_old.size()
@@ -244,7 +259,9 @@ void Solution::write_if_better(const Instance& inst, const std::string& name) {
 		string out_name = out_file_full(name);
 		ofstream ofs(out_name);
 		write(ofs, remove_ext(name));
+		return true;
 	}
+	return false;
 }
 
 } // namespace cgshop2023
