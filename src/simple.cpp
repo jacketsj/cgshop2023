@@ -37,12 +37,6 @@ void use_threads(vector<string> todos, size_t num_threads,
 }
 
 int main(int argc, char* argv[]) {
-	string filename;
-	vector<string> files;
-	while (cin >> filename) {
-		files.push_back(filename);
-	}
-
 	bool orderBySize = false;
 	bool init = false;
 	size_t num_threads = 1;
@@ -73,6 +67,12 @@ int main(int argc, char* argv[]) {
 			removal_attempts = stoi(next());
 		else if (eq("--replacement-choices"))
 			replacement_choices = stoi(next());
+	}
+
+	string filename;
+	vector<string> files;
+	while (cin >> filename) {
+		files.push_back(remove_ext(filename));
 	}
 
 	if (orderBySize) {

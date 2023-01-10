@@ -6,6 +6,30 @@
 #include <string>
 #include <type_traits>
 
+std::string remove_ext(std::string s) {
+	size_t last_slash = s.find_last_of("/");
+	if (last_slash != std::string::npos)
+		s = s.substr(last_slash + 1);
+
+	size_t last_dot = s.find_first_of(".");
+	if (last_dot == std::string::npos)
+		return s;
+	return s.substr(0, last_dot);
+}
+
+const std::string OUTPATH = "solutions/";
+const std::string INPATH = "instances/";
+const std::string INEXT = ".instance.json";
+const std::string OUTEXT = ".solution.json";
+
+std::string in_file_full(std::string name) {
+	return INPATH + remove_ext(name) + INEXT;
+}
+
+std::string out_file_full(std::string name) {
+	return OUTPATH + remove_ext(name) + OUTEXT;
+}
+
 namespace cgshop2023 {
 
 using std::cerr;
@@ -13,28 +37,6 @@ using std::endl;
 using std::ifstream;
 using std::ofstream;
 using std::string;
-
-const string OUTPATH = "solutions/";
-const string INPATH = "instances/";
-const string INEXT = ".instance.json";
-const string OUTEXT = ".solution.json";
-
-string remove_ext(string s) {
-	size_t last_slash = s.find_last_of("/");
-	if (last_slash != string::npos)
-		s = s.substr(last_slash + 1);
-
-	size_t last_dot = s.find_first_of(".");
-	if (last_dot == string::npos)
-		return s;
-	return s.substr(0, last_dot);
-}
-
-string in_file_full(string name) { return INPATH + remove_ext(name) + INEXT; }
-
-string out_file_full(string name) {
-	return OUTPATH + remove_ext(name) + OUTEXT;
-}
 
 template <typename K, typename V>
 static void write_kv(std::ostream& output, const K& key, const V& value) {

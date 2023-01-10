@@ -12,12 +12,19 @@
 #include <utility>
 #include <vector>
 
+std::string remove_ext(std::string s);
+
+std::string in_file_full(std::string name);
+
+std::string out_file_full(std::string name);
+
 namespace cgshop2023 {
 
 using Kernel = CGAL::Epeck;
 using Point = CGAL::Point_2<Kernel>;
 using Polygon = CGAL::Polygon_with_holes_2<Kernel>;
 using SimplePolygon = CGAL::Polygon_2<Kernel>;
+using std::string;
 
 Kernel::FT area(const Polygon& polygon);
 
