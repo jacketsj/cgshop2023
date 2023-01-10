@@ -7,7 +7,7 @@
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Vector_2.h>
-#include <CGAL/draw_triangulation_2.h>
+//#include <CGAL/draw_triangulation_2.h>
 #include <iostream>
 #include <utility>
 

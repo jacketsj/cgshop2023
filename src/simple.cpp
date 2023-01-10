@@ -2,7 +2,7 @@
 
 #include "cgshop2023_core/cpp_instance.hpp"
 #include "cgshop2023_core/verify.hpp"
-#include "draw_solution.hpp"
+//#include "draw_solution.hpp"
 #include "globals.hpp"
 #include "localsearch.hpp"
 #include "triangulation.hpp"

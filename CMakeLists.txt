@@ -18,9 +18,10 @@ include(./cmake/CPM.cmake)  # Package manager for simple requirements.
 CPMAddPackage("gh:fmtlib/fmt#9.1.0")  # fmt for nice strings
 
 find_package(Threads)
-find_package(X11)
-find_package(CGAL REQUIRED COMPONENTS Core Qt5)
-find_package(Qt5 QUIET COMPONENTS Qt5 Core)
+#find_package(X11)
+find_package(CGAL REQUIRED COMPONENTS Core)
+#find_package(CGAL REQUIRED COMPONENTS Core Qt5)
+#find_package(Qt5 QUIET COMPONENTS Qt5 Core)
 
 add_definitions("-DCGAL_USE_BASIC_VIEWER")
 
@@ -28,4 +29,5 @@ file(GLOB SOURCES_simple ${SRC}/*.cpp ${SRC}/cgshop2023_core/*.cpp)
 
 add_executable(simple ${SOURCES_simple})
 
-target_link_libraries(simple PUBLIC CGAL::CGAL CGAL::CGAL_Qt5 fmt::fmt)
+#target_link_libraries(simple PUBLIC CGAL::CGAL CGAL::CGAL_Qt5 fmt::fmt)
+target_link_libraries(simple PUBLIC CGAL::CGAL fmt::fmt)
