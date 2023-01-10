@@ -171,8 +171,8 @@ static SimplePolygon json_to_points(const nlohmann::json& plist) {
 
 static Kernel::FT rational_to_cgal_exact(const nlohmann::json& val) {
 	Kernel::FT num = int64_to_cgal_exact(val.at("num").get<std::int64_t>());
-	Kernel::FT dem = int64_to_cgal_exact(val.at("dem").get<std::int64_t>());
-	return num / dem;
+	Kernel::FT den = int64_to_cgal_exact(val.at("den").get<std::int64_t>());
+	return num / den;
 }
 
 static SimplePolygon json_to_rational_points(const nlohmann::json& plist) {

@@ -3,6 +3,7 @@
 #include "cgshop2023_core/cpp_instance.hpp"
 #include "cgshop2023_core/verify.hpp"
 #include "draw_solution.hpp"
+#include "globals.hpp"
 #include "localsearch.hpp"
 #include "triangulation.hpp"
 //#include <CGAL/draw_polygon_with_holes_2.h>
@@ -44,14 +45,14 @@ int main(int argc, char* argv[]) {
 	bool localsearch = false;
 	size_t removal_attempts = 0;
 	size_t replacement_choices = 0;
-	for (int i = 0; i < argc; ++i) {
+	for (int i = 1; i < argc; ++i) {
 		string cur(argv[i]);
 		auto eq = [&](const auto& a) { return cur == string(a); };
 		auto next = [&]() { return string(argv[++i]); };
 		if (eq("-h") || eq("--help")) {
 			cerr << "Example usage: ls instances | build/simple --order-by-size "
-							"--localsearch --randomize --num_threads 3 --removal_attempts "
-							"100 --replacement_choices 100"
+							"--localsearch --randomize --num-threads 3 --removal-attempts "
+							"100 --replacement-choices 100"
 					 << endl;
 		} else if (eq("--order-by-size"))
 			orderBySize = true;
@@ -67,6 +68,11 @@ int main(int argc, char* argv[]) {
 			removal_attempts = stoi(next());
 		else if (eq("--replacement-choices"))
 			replacement_choices = stoi(next());
+		else if (eq("--verbose") || eq("-v"))
+			VERBOSE = true;
+		else {
+			cerr << "Unknown command-line option: " << cur << endl;
+		}
 	}
 
 	string filename;
@@ -79,10 +85,7 @@ int main(int argc, char* argv[]) {
 		cerr << "Sorting inputs by total size\n";
 		vector<pair<int, string>> files_sized;
 		for (auto& filename : files) {
-			auto fileloc = filename;
-			ifstream ifs(fileloc);
-			string out_name;
-			Instance inst = Instance::read(ifs, out_name);
+			Instance inst = Instance::read_file(filename);
 			size_t size = inst.polygon().outer_boundary().size();
 			for (const auto& hole : inst.polygon().holes())
 				size += hole.size();

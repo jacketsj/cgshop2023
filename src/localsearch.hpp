@@ -2,6 +2,7 @@
 
 #include "cgshop2023_core/cpp_instance.hpp"
 #include "cgshop2023_core/verify.hpp"
+#include "globals.hpp"
 #include <CGAL/ch_graham_andrew.h>
 
 using namespace cgshop2023;
@@ -90,6 +91,11 @@ bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
 	for (size_t i = 0; i < to_try.size() &&
 										 (replacement_choices == 0 || i < replacement_choices);
 			 ++i) {
+		if (VERBOSE) {
+			// cerr << "Doing " << i << "th replacement choice for polygon " <<
+			// polygon_i
+			//		 << endl;
+		}
 		size_t cur_i = to_try[i];
 		bool allCovered = false;
 		SimplePolygon newPoly = greedy_expand(inst, sol.polygons()[cur_i],
@@ -124,6 +130,10 @@ void try_remove_all(Instance& inst, Solution& sol, bool randomize,
 	for (size_t i = 0;
 			 i < to_remove.size() && (removal_attempts == 0 || i < removal_attempts);
 			 ++i) {
+		if (VERBOSE) {
+			cerr << "Doing " << i << "th try remove (polygon number " << i << ": "
+					 << to_remove[i] << ")" << endl;
+		}
 		removal_if_possible(inst, sol, to_remove[i], randomize,
 												replacement_choices);
 	}
