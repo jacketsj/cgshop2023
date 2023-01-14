@@ -15,6 +15,10 @@ set(CMAKE_CXX_FLAGS "-Wall -pthread -O3 -mavx -fopenmp -g")
 
 include(./cmake/CPM.cmake)  # Package manager for simple requirements.
 
+# run `conan install .. --build=missing` in `./cmake`
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 CPMAddPackage("gh:fmtlib/fmt#9.1.0")  # fmt for nice strings
 
 find_package(Threads)
