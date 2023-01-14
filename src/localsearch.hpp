@@ -75,6 +75,81 @@ SimplePolygon greedy_expand(Instance& inst, SimplePolygon poly,
 std::random_device rd;
 std::mt19937 g(rd());
 
+vector<SimplePolygon> get_missing(const Instance& inst,
+																	const vector<SimplePolygon>& partial_cover) {
+	vector<Polygon> to_join;
+	for (auto& poly : partial_cover) {
+		to_join.push_back(Polygon(poly));
+	}
+	vector<Polygon> polygon_c;
+	CGAL::complement(inst.polygon(), std::back_inserter(polygon_c));
+	for (const auto& poly : polygon_c)
+		to_join.push_back(poly);
+	std::vector<Polygon> coverage = {};
+	CGAL::join(to_join.begin(), to_join.end(), std::back_inserter(coverage));
+
+	assert(coverage.size() == 1);
+
+	vector<SimplePolygon> output;
+	for (auto& poly : coverage[0].holes())
+		output.push_back(poly);
+
+	return output;
+}
+
+vector<SimplePolygon>
+get_missing_removal(const Instance& inst,
+										const vector<SimplePolygon>& full_cover, size_t polygon_i) {
+	vector<SimplePolygon> partial_cover;
+	for (size_t i = 0; i < full_cover.size(); ++i) {
+		if (i == polygon_i)
+			continue;
+		partial_cover.push_back(full_cover[i]);
+	}
+	return get_missing(inst, partial_cover);
+}
+
+SimplePolygon minimize_to_necessary(const Instance& inst,
+																		const vector<SimplePolygon>& full_cover,
+																		size_t polygon_i) {
+	auto missing = get_missing_removal(inst, full_cover, polygon_i);
+	vector<Point> pointset;
+	for (const auto& poly : missing) {
+		for (const auto& pt : poly)
+			pointset.push_back(pt);
+	}
+	// get the convex hull
+	vector<Point> chull;
+	CGAL::ch_graham_andrew(pointset.begin(), pointset.end(),
+												 std::back_inserter(chull));
+	SimplePolygon newPoly(chull.begin(), chull.end());
+	return newPoly;
+}
+
+double compute_area(const vector<SimplePolygon>& missing) {
+	double cur_area(0);
+	for (auto& poly : missing) {
+		cur_area += CGAL::to_double(poly.area());
+	}
+	return double(cur_area);
+}
+
+double removal_score_base(const Instance& inst,
+													const vector<SimplePolygon>& current_cover,
+													size_t polygon_i) {
+	auto missing_current = get_missing(inst, current_cover);
+	auto missing_next = get_missing_removal(inst, current_cover, polygon_i);
+	auto total_area_current = compute_area(missing_current);
+	auto total_area_next = compute_area(missing_next);
+	auto count_current = missing_current.size();
+	auto count_next = missing_next.size();
+
+	// negative = worse score
+	auto area_delta = total_area_current - total_area_next;
+	auto count_delta = count_next - count_current;
+	return 8 * area_delta + 4 * count_delta;
+}
+
 bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
 								 bool randomize, size_t replacement_choices) {
 	vector<Point> desired_coverage(sol.polygons()[polygon_i].begin(),
