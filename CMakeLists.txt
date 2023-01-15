@@ -22,6 +22,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 CPMAddPackage("gh:fmtlib/fmt#9.1.0")  # fmt for nice strings
 
 find_package(Threads)
+find_package(nlohmann_json)
 #find_package(X11)
 find_package(CGAL REQUIRED COMPONENTS Core)
 #find_package(CGAL REQUIRED COMPONENTS Core Qt5)
@@ -34,4 +35,4 @@ file(GLOB SOURCES_simple ${SRC}/*.cpp ${SRC}/cgshop2023_core/*.cpp)
 add_executable(simple ${SOURCES_simple})
 
 #target_link_libraries(simple PUBLIC CGAL::CGAL CGAL::CGAL_Qt5 fmt::fmt)
-target_link_libraries(simple PUBLIC CGAL::CGAL fmt::fmt)
+target_link_libraries(simple PUBLIC CGAL::CGAL fmt::fmt nlohmann_json::nlohmann_json)
