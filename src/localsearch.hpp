@@ -151,9 +151,26 @@ double removal_score_base(const Instance& inst,
 }
 
 bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
-								 bool randomize, size_t replacement_choices) {
+								 bool randomize, bool minimize, size_t replacement_choices) {
 	vector<Point> desired_coverage(sol.polygons()[polygon_i].begin(),
 																 sol.polygons()[polygon_i].end());
+	vector<SimplePolygon> modified_cover;
+	if (minimize) {
+		SimplePolygon minimal_desired_coverage_full =
+				minimize_to_necessary(inst, sol.polygons(), polygon_i);
+		desired_coverage = vector<Point>(minimal_desired_coverage_full.begin(),
+																		 minimal_desired_coverage_full.end());
+
+		vector<Point> chull;
+		CGAL::ch_graham_andrew(desired_coverage.begin(), desired_coverage.end(),
+													 std::back_inserter(chull));
+		SimplePolygon newPoly(chull.begin(), chull.end());
+		modified_cover = sol.polygons();
+		modified_cover[polygon_i] = newPoly;
+	} else {
+		modified_cover = sol.polygons();
+	}
+
 	// try to remove polygon_i
 	// do it by trying to get polygons in sol to cover it's vertices
 	vector<int> to_try;
@@ -173,8 +190,12 @@ bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
 		}
 		size_t cur_i = to_try[i];
 		bool allCovered = false;
-		SimplePolygon newPoly = greedy_expand(inst, sol.polygons()[cur_i],
-																					desired_coverage, allCovered);
+		SimplePolygon to_expand = sol.polygons()[cur_i];
+		if (minimize) {
+			to_expand = minimize_to_necessary(inst, modified_cover, cur_i);
+		}
+		SimplePolygon newPoly =
+				greedy_expand(inst, to_expand, desired_coverage, allCovered);
 		if (allCovered) {
 			sol.polygons_m()[cur_i] = newPoly;
 			succeeded = true;
@@ -185,8 +206,10 @@ bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
 }
 
 void removal_if_possible(Instance& inst, Solution& sol, size_t polygon_i,
-												 bool randomize, size_t replacement_choices) {
-	if (try_removal(inst, sol, polygon_i, randomize, replacement_choices)) {
+												 bool randomize, bool minimize,
+												 size_t replacement_choices) {
+	if (try_removal(inst, sol, polygon_i, randomize, minimize,
+									replacement_choices)) {
 		swap(sol.polygons_m()[polygon_i],
 				 sol.polygons_m()[sol.polygons().size() - 1]);
 		sol.polygons_m().pop_back();
@@ -194,7 +217,8 @@ void removal_if_possible(Instance& inst, Solution& sol, size_t polygon_i,
 }
 
 void try_remove_all(Instance& inst, Solution& sol, bool randomize,
-										size_t removal_attempts, size_t replacement_choices) {
+										size_t removal_attempts, bool minimize,
+										size_t replacement_choices) {
 	cerr << "Running try_remove_all on " << sol.polygons().size()
 			 << " polygons\n";
 	vector<int> to_remove;
@@ -209,7 +233,7 @@ void try_remove_all(Instance& inst, Solution& sol, bool randomize,
 			cerr << "Doing " << i << "th try remove (polygon number " << i << ": "
 					 << to_remove[i] << ")" << endl;
 		}
-		removal_if_possible(inst, sol, to_remove[i], randomize,
+		removal_if_possible(inst, sol, to_remove[i], randomize, minimize,
 												replacement_choices);
 	}
 	cerr << "Finished running try_remove_all, now have " << sol.polygons().size()

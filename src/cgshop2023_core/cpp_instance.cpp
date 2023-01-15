@@ -219,6 +219,7 @@ Solution Solution::read(std::istream& input) {
 
 Instance Instance::read_file(const std::string& name) {
 	auto fileloc = in_file_full(name);
+	cerr << "About to read in file (full path): " << fileloc << endl;
 	ifstream ifs(fileloc);
 	string out_name;
 	Instance inst = Instance::read(ifs, out_name);
@@ -227,6 +228,7 @@ Instance Instance::read_file(const std::string& name) {
 
 Solution Solution::read_file(const std::string& name) {
 	auto fileloc = out_file_full(name);
+	cerr << "About to read out file (full path): " << fileloc << endl;
 	ifstream ifs(fileloc);
 	string out_name;
 	Solution sol = Solution::read(ifs);
