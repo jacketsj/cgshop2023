@@ -1,5 +1,5 @@
-#include "cgshop2023_core/verify.hpp"
 #include "cpp_instance.hpp"
+#include "cgshop2023_core/verify.hpp"
 #include <exception>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -56,7 +56,9 @@ static void write_point(std::ostream& output, const P& p) {
 
 template <typename V>
 static void write_num_exact(std::ostream& output, const V& v) {
-	auto gmpq = CGAL::Gmpq(v.exact());
+	auto gmpq =
+			CGAL::Gmpq((int64_t)boost::multiprecision::numerator(v.exact()),
+								 (int64_t)boost::multiprecision::denominator(v.exact()));
 	output << "{\"num\": ";
 	output << gmpq.numerator();
 	output << ",\"den\": ";
