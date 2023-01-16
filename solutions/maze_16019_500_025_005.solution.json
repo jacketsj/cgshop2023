@@ -1,4 +1,4 @@
-{"type": "CGSHOP2023_Instance",
+{"type": "CGSHOP2023_Solution",
 "instance": "maze_16019_500_025_005",
 "polygons": [
 [{"x": {"num": 913,"den": 1}, "y": {"num": 1279,"den": 1}}, {"x": {"num": 913,"den": 1}, "y": {"num": 1245,"den": 1}}, {"x": {"num": 925,"den": 1}, "y": {"num": 1257,"den": 1}}],
