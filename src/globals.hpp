@@ -1,3 +1,4 @@
 #pragma once
 
-bool VERBOSE = false;
+bool VERBOSE();
+void SET_VERBOSE(bool);

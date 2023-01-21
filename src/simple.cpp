@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 		else if (eq("--replacement-choices"))
 			replacement_choices = stoi(next());
 		else if (eq("--verbose") || eq("-v"))
-			VERBOSE = true;
+			SET_VERBOSE(true);
 		else {
 			cerr << "Unknown command-line option: " << cur << endl;
 		}
