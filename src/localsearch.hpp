@@ -22,6 +22,11 @@ SimplePolygon greedy_expand(Instance& inst, SimplePolygon poly,
 vector<Polygon> get_missing(const Instance& inst,
 														const vector<SimplePolygon>& partial_cover);
 
+// get the area uncovered by partial_cover in inst, triangulated
+vector<SimplePolygon>
+get_missing_triangles(const Instance& inst,
+											const vector<SimplePolygon>& partial_cover);
+
 // get the area uncovered by full_cover[i!=polygon_i] in inst
 vector<Polygon> get_missing_removal(const Instance& inst,
 																		const vector<SimplePolygon>& full_cover,

@@ -99,6 +99,12 @@ vector<Polygon> get_missing(const Instance& inst,
 	// return output;
 }
 
+vector<SimplePolygon>
+get_missing_triangles(const Instance& inst,
+											const vector<SimplePolygon>& partial_cover) {
+	return getTriangles(get_missing(inst, partial_cover));
+}
+
 vector<Polygon> get_missing_removal(const Instance& inst,
 																		const vector<SimplePolygon>& full_cover,
 																		size_t polygon_i) {

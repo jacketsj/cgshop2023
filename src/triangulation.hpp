@@ -103,6 +103,55 @@ void mark_domains(CDT& cdt) {
 	}
 }
 
+std::vector<SimplePolygon> getTriangles(Polygon& polygon_with_holes) {
+	CDT cdt;
+	vector<vector<Vertex_handle>> boundaries;
+	vector<Vertex_handle> outer_boundary;
+	for (auto& vert : polygon_with_holes.outer_boundary())
+		outer_boundary.emplace_back(cdt.insert(vert));
+	boundaries.push_back(outer_boundary);
+	for (auto& hole : polygon_with_holes.holes()) {
+		vector<Vertex_handle> hole_boundary;
+		for (auto& vert : hole)
+			hole_boundary.emplace_back(cdt.insert(vert));
+		boundaries.push_back(hole_boundary);
+	}
+	for (auto& boundary : boundaries) {
+		for (size_t i = 0; i < boundary.size(); ++i) {
+			size_t j = (i + 1) % boundary.size();
+			cdt.insert_constraint(boundary[i], boundary[j]);
+			constrained_edges.emplace(boundary[i], boundary[j]);
+			constrained_edges.emplace(boundary[j], boundary[i]);
+		}
+	}
+	mark_domains(cdt);
+	std::vector<SimplePolygon> polys;
+	for (auto it = cdt.finite_faces_begin(); it != cdt.finite_faces_end(); ++it) {
+		auto tri = cdt.triangle(it);
+		SimplePolygon poly;
+		Vector v(0, 0);
+		for (int i = 0; i < 3; ++i) {
+			poly.push_back(tri[i]);
+			v += tri[i] - Point(0, 0);
+		}
+		v /= 3;
+		Point p = Point(0, 0) + v;
+		auto correct_side = it->info().in_domain();
+		if (correct_side)
+			polys.emplace_back(poly);
+	}
+	return polys;
+}
+
+std::vector<SimplePolygon>
+getTriangles(std::vector<Polygon>& polygons_with_holes) {
+	std::vector<SimplePolygon> ans;
+	for (auto& polygon_with_holes : polygons_with_holes)
+		for (auto& tri : getTriangles(polygon_with_holes))
+			ans.emplace_back(tri);
+	return ans;
+}
+
 Solution basicTriangulation(const Instance& inst) {
 	auto polygon_with_holes = inst.polygon();
 	CDT cdt;
