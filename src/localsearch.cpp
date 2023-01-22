@@ -5,6 +5,7 @@
 #include "globals.hpp"
 #include <CGAL/ch_graham_andrew.h>
 #include <random>
+#include <utility>
 
 using namespace cgshop2023;
 using namespace std;
@@ -76,32 +77,31 @@ SimplePolygon greedy_expand(Instance& inst, SimplePolygon poly,
 	return poly;
 }
 
-vector<SimplePolygon> get_missing(const Instance& inst,
-																	const vector<SimplePolygon>& partial_cover) {
-	vector<Polygon> to_join;
-	for (auto& poly : partial_cover) {
-		to_join.push_back(Polygon(poly));
-	}
-	vector<Polygon> polygon_c;
-	CGAL::complement(inst.polygon(), std::back_inserter(polygon_c));
-	for (const auto& poly : polygon_c)
-		to_join.push_back(poly);
+vector<Polygon> get_missing(const Instance& inst,
+														const vector<SimplePolygon>& partial_cover) {
 	std::vector<Polygon> coverage = {};
-	CGAL::join(to_join.begin(), to_join.end(), std::back_inserter(coverage));
+	CGAL::join(partial_cover.begin(), partial_cover.end(),
+						 std::back_inserter(coverage));
+	std::vector<Polygon> base({inst.polygon()});
+	std::vector<Polygon> coverage_2;
+	CGAL::symmetric_difference(base.begin(), base.end(), coverage.begin(),
+														 coverage.end(), std::back_inserter(coverage_2));
+
+	return coverage_2;
 
 	// TODO what if this is empty instead? need extra routine for that probably
-	assert(coverage.size() == 1);
+	// assert(coverage.size() == 1);
 
-	vector<SimplePolygon> output;
-	for (auto& poly : coverage[0].holes())
-		output.push_back(poly);
+	// vector<SimplePolygon> output;
+	// for (auto& poly : coverage[0].holes())
+	//	output.push_back(poly);
 
-	return output;
+	// return output;
 }
 
-vector<SimplePolygon>
-get_missing_removal(const Instance& inst,
-										const vector<SimplePolygon>& full_cover, size_t polygon_i) {
+vector<Polygon> get_missing_removal(const Instance& inst,
+																		const vector<SimplePolygon>& full_cover,
+																		size_t polygon_i) {
 	vector<SimplePolygon> partial_cover;
 	for (size_t i = 0; i < full_cover.size(); ++i) {
 		if (i == polygon_i)
@@ -111,13 +111,20 @@ get_missing_removal(const Instance& inst,
 	return get_missing(inst, partial_cover);
 }
 
-SimplePolygon minimize_to_necessary(const Instance& inst,
-																		const vector<SimplePolygon>& full_cover,
-																		size_t polygon_i) {
+std::optional<SimplePolygon>
+minimize_to_necessary(const Instance& inst,
+											const vector<SimplePolygon>& full_cover,
+											size_t polygon_i) {
+	// TODO remove debug code
+	// return full_cover[polygon_i];
+
 	auto missing = get_missing_removal(inst, full_cover, polygon_i);
+	if (missing.empty()) {
+		return std::nullopt;
+	}
 	vector<Point> pointset;
 	for (const auto& poly : missing) {
-		for (const auto& pt : poly)
+		for (const auto& pt : poly.outer_boundary())
 			pointset.push_back(pt);
 	}
 	// get the convex hull
@@ -139,6 +146,8 @@ double compute_area(const vector<SimplePolygon>& polys) {
 double removal_score_base(const Instance& inst,
 													const vector<SimplePolygon>& current_cover,
 													size_t polygon_i) {
+	return 0.0;
+	/*
 	auto missing_current = get_missing(inst, current_cover);
 	auto missing_next = get_missing_removal(inst, current_cover, polygon_i);
 	auto total_area_current = compute_area(missing_current);
@@ -151,6 +160,7 @@ double removal_score_base(const Instance& inst,
 	auto area_delta = total_area_current - total_area_next;
 	auto count_delta = count_next - count_current;
 	return 8 * area_delta + 4 * count_delta;
+	*/
 }
 
 bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
@@ -159,8 +169,14 @@ bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
 																 sol.polygons()[polygon_i].end());
 	vector<SimplePolygon> modified_cover;
 	if (minimize) {
-		SimplePolygon minimal_desired_coverage_full =
+		std::optional<SimplePolygon> minimal_desired_coverage_full_opt =
 				minimize_to_necessary(inst, sol.polygons(), polygon_i);
+		if (minimal_desired_coverage_full_opt == std::nullopt) {
+			// polygon can be removed without any modification, it is already covered
+			return true;
+		}
+		SimplePolygon minimal_desired_coverage_full =
+				minimal_desired_coverage_full_opt.value();
 		desired_coverage = vector<Point>(minimal_desired_coverage_full.begin(),
 																		 minimal_desired_coverage_full.end());
 
@@ -195,7 +211,13 @@ bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,
 		bool allCovered = false;
 		SimplePolygon to_expand = sol.polygons()[cur_i];
 		if (minimize) {
-			to_expand = minimize_to_necessary(inst, modified_cover, cur_i);
+			std::optional<SimplePolygon> to_expand_opt =
+					minimize_to_necessary(inst, modified_cover, cur_i);
+			if (to_expand_opt == std::nullopt) {
+				to_expand = modified_cover[polygon_i];
+			} else {
+				to_expand = to_expand_opt.value();
+			}
 		}
 		SimplePolygon newPoly =
 				greedy_expand(inst, to_expand, desired_coverage, allCovered);

@@ -19,19 +19,20 @@ SimplePolygon greedy_expand(Instance& inst, SimplePolygon poly,
 														bool& allCovered);
 
 // get the area uncovered by partial_cover in inst
-vector<SimplePolygon> get_missing(const Instance& inst,
-																	const vector<SimplePolygon>& partial_cover);
+vector<Polygon> get_missing(const Instance& inst,
+														const vector<SimplePolygon>& partial_cover);
 
 // get the area uncovered by full_cover[i!=polygon_i] in inst
-vector<SimplePolygon>
-get_missing_removal(const Instance& inst,
-										const vector<SimplePolygon>& full_cover, size_t polygon_i);
+vector<Polygon> get_missing_removal(const Instance& inst,
+																		const vector<SimplePolygon>& full_cover,
+																		size_t polygon_i);
 
 // given a full_cover, and a polygon in that full cover, shrink that polygon
 // greedily while maintaining the property that the cover is full
-SimplePolygon minimize_to_necessary(const Instance& inst,
-																		const vector<SimplePolygon>& full_cover,
-																		size_t polygon_i);
+std::optional<SimplePolygon>
+minimize_to_necessary(const Instance& inst,
+											const vector<SimplePolygon>& full_cover,
+											size_t polygon_i);
 
 // compute the total area of a set of disjoint polygons
 double compute_area(const vector<SimplePolygon>& polys);
