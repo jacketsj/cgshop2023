@@ -3,6 +3,7 @@
 #include "cgshop2023_core/cpp_instance.hpp"
 #include "cgshop2023_core/verify.hpp"
 #include "globals.hpp"
+#include "triangulation.hpp"
 #include <CGAL/ch_graham_andrew.h>
 #include <random>
 #include <utility>
