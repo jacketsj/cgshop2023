@@ -27,6 +27,7 @@ using SimplePolygon = CGAL::Polygon_2<Kernel>;
 using std::string;
 
 Kernel::FT area(const Polygon& polygon);
+Kernel::FT area(const SimplePolygon& polygon);
 
 class Instance {
 public:

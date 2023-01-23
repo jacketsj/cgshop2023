@@ -1,5 +1,6 @@
-#include "cpp_instance.hpp"
 #include "cgshop2023_core/verify.hpp"
+#include "cpp_instance.hpp"
+#include "flood.hpp"
 #include <exception>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -269,5 +270,16 @@ bool Solution::write_if_better(const Instance& inst, const std::string& name) {
 	}
 	return false;
 }
+
+Kernel::FT area(const Polygon& polygon) {
+	// Compute area of non-simple polygon
+	auto area = polygon.outer_boundary().area();
+	// hole areas are negative, so we can simply sum them up.
+	return std::transform_reduce(polygon.holes_begin(), polygon.holes_end(), area,
+															 std::plus<>(),
+															 [](const auto& p) { return p.area(); });
+}
+
+Kernel::FT area(const SimplePolygon& polygon) { return polygon.area(); }
 
 } // namespace cgshop2023

@@ -46,15 +46,6 @@ std::optional<Polygon> SolutionVerifier::compute_coverage() {
 	return union_results.at(0);
 }
 
-Kernel::FT area(const Polygon& polygon) {
-	// Compute area of non-simple polygon
-	auto area = polygon.outer_boundary().area();
-	// hole areas are negative, so we can simply sum them up.
-	return std::transform_reduce(polygon.holes_begin(), polygon.holes_end(), area,
-															 std::plus<>(),
-															 [](const auto& p) { return p.area(); });
-}
-
 // check that the entire instance is covered
 bool SolutionVerifier::p_verify_coverage(const Polygon& coverage) {
 	const Polygon& ipoly = instance().polygon();
