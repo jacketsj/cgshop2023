@@ -69,9 +69,9 @@ struct conflict_optimizer {
 	void remove_random(size_t count);
 	void add_random(size_t count);
 	void inner_iterate() {
-		// TODO remove some things from the cover (using a heuristic)
+		// TODO remove some things from the cover (using a better heuristic)
 		// TODO for the number things to remove, use simulated annealing (maybe
-		// combined with spacial-based conflict-based search)
+		// combined with spacial-based conflict-optimization for choices)
 		remove_random(1);
 		for (unsigned expands = 0;
 				 expands < max_greedy_update && !uncovered.empty();) {
@@ -85,6 +85,8 @@ struct conflict_optimizer {
 		if (!uncovered.empty()) {
 			// use heuristic to choose a triangle to add to the cover
 			// TODO make better heuristic (random for now)
+			// TODO use simulated annealing to choose how many, spacial-based
+			// conflict-optimization for choices
 			add_random(1);
 			update_uncovered();
 		}
@@ -112,7 +114,6 @@ struct conflict_optimizer {
 			revert();
 		}
 	}
-	// TODO create an outer run function
 };
 
 void run_co(Instance& inst, Solution& sol, unsigned max_attempts = 1000,
