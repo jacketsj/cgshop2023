@@ -58,8 +58,7 @@ struct conflict_optimizer {
 	unsigned max_greedy_update = 10000;
 	unsigned max_cover_size = 10000;
 	conflict_optimizer(const Instance& _inst, const vector<SimplePolygon>& _cover)
-			: inst(_inst), cover(_cover), cover_restore(_cover),
-				uncovered(get_missing_triangles(inst, cover)) {}
+			: inst(_inst), cover(_cover), cover_restore(_cover) { update_uncovered(); }
 	unsigned greedily_cover();
 	void update_uncovered() { uncovered = get_missing_triangles(inst, cover); }
 	void remove_from_cover(size_t i) {
@@ -73,14 +72,15 @@ struct conflict_optimizer {
 		// TODO for the number things to remove, use simulated annealing (maybe
 		// combined with spacial-based conflict-optimization for choices)
 		remove_random(1);
+			update_uncovered();
 		for (unsigned expands = 0;
 				 expands < max_greedy_update && !uncovered.empty();) {
 			auto num_covered = greedily_cover();
-			if (num_covered == 0)
-				break;
-			expands += num_covered;
-			// update uncovered each time (up to some iteration limit)
+			// update uncovered each time
 			update_uncovered();
+			if (num_covered == 0) {
+				break;
+      }
 		}
 		if (!uncovered.empty()) {
 			// use heuristic to choose a triangle to add to the cover
@@ -104,15 +104,15 @@ struct conflict_optimizer {
 				if (cover.size() > max_cover_size) {
 					revert();
 					break;
-				}
-				// if an improvement has been found, commit it
-				if (uncovered.empty() && cover.size() < cover_restore.size()) {
+				} else if (uncovered.empty() && cover.size() < cover_restore.size()) {
+				  // if an improvement has been found, commit it
 					commit();
 					break;
 				}
 			}
 			revert();
 		}
+		revert();
 	}
 };
 
