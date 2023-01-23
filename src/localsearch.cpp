@@ -20,7 +20,7 @@ using SimplePolygon = CGAL::Polygon_2<Kernel>;
 std::random_device rd;
 std::mt19937 g(rd());
 
-SimplePolygon greedy_expand(Instance& inst, SimplePolygon poly,
+SimplePolygon greedy_expand(const Instance& inst, SimplePolygon poly,
 														const vector<Point>& desired_coverage,
 														bool& allCovered) {
 	allCovered = true;
@@ -89,15 +89,6 @@ vector<Polygon> get_missing(const Instance& inst,
 														 coverage.end(), std::back_inserter(coverage_2));
 
 	return coverage_2;
-
-	// TODO what if this is empty instead? need extra routine for that probably
-	// assert(coverage.size() == 1);
-
-	// vector<SimplePolygon> output;
-	// for (auto& poly : coverage[0].holes())
-	//	output.push_back(poly);
-
-	// return output;
 }
 
 vector<SimplePolygon>
@@ -122,9 +113,6 @@ std::optional<SimplePolygon>
 minimize_to_necessary(const Instance& inst,
 											const vector<SimplePolygon>& full_cover,
 											size_t polygon_i) {
-	// TODO remove debug code
-	// return full_cover[polygon_i];
-
 	auto missing = get_missing_removal(inst, full_cover, polygon_i);
 	if (missing.empty()) {
 		return std::nullopt;
@@ -168,6 +156,62 @@ double removal_score_base(const Instance& inst,
 	auto count_delta = count_next - count_current;
 	return 8 * area_delta + 4 * count_delta;
 	*/
+}
+
+SimplePolygon greedy_flood(const Instance& inst, SimplePolygon poly) {
+	// TODO
+	// https://cs.stackexchange.com/questions/80574/maximal-expansion-of-a-convex-polygon
+	// stub
+	return poly;
+}
+
+unsigned conflict_optimizer::greedily_cover() {
+	// greedily cover all the triangles in uncovered which can be covered, with
+	// a random order
+	shuffle(uncovered.begin(), uncovered.end(), g);
+	size_t count = 0;
+	for (size_t i = 0; i < count && i < uncovered.size(); ++i) {
+		for (size_t polygon_i = 0; polygon_i < cover.size(); ++polygon_i) {
+			SimplePolygon to_expand = cover[polygon_i];
+			// shrink to_expand so that it still covers everything unique to it that
+			// it did before (while still being convex)
+			std::optional<SimplePolygon> to_expand_opt =
+					minimize_to_necessary(inst, cover, polygon_i);
+			// if to_expand is actually unnecessary
+			if (to_expand_opt == std::nullopt) {
+				to_expand = uncovered[i];
+			} else {
+				to_expand = to_expand_opt.value();
+			}
+			bool fullyCovered;
+			SimplePolygon newPoly = greedy_expand(
+					inst, to_expand, uncovered[i].container(), fullyCovered);
+			if (fullyCovered) {
+				cover[polygon_i] = greedy_flood(inst, newPoly);
+				break;
+			}
+		}
+	}
+	return count;
+}
+
+void conflict_optimizer::remove_random(size_t count) {
+	shuffle(cover.begin(), cover.end(), g);
+	for (size_t num = 0; num < count && !cover.empty(); ++num)
+		cover.pop_back();
+}
+void conflict_optimizer::add_random(size_t count) {
+	shuffle(uncovered.begin(), uncovered.end(), g);
+	for (size_t i = 0; i < count && i < uncovered.size(); ++i) {
+		cover.push_back(greedy_flood(inst, uncovered[i]));
+	}
+}
+
+void run_co(Instance& inst, Solution& sol, unsigned max_attempts,
+						unsigned max_iters) {
+	conflict_optimizer co(inst, sol.polygons());
+	co.run(max_attempts, max_iters);
+	sol = Solution(co.cover);
 }
 
 bool try_removal(Instance& inst, Solution& sol, size_t polygon_i,

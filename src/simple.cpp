@@ -46,14 +46,22 @@ int main(int argc, char* argv[]) {
 	size_t removal_attempts = 0;
 	bool minimize = false;
 	size_t replacement_choices = 0;
+	bool conflict_optimize = false;
+	unsigned max_attempts = 1000;
+	unsigned max_iters = 10000;
 	for (int i = 1; i < argc; ++i) {
 		string cur(argv[i]);
 		auto eq = [&](const auto& a) { return cur == string(a); };
 		auto next = [&]() { return string(argv[++i]); };
 		if (eq("-h") || eq("--help")) {
-			cerr << "Example usage: ls instances | build/simple --order-by-size "
-							"--localsearch --randomize --num-threads 3 --removal-attempts "
-							"100 --replacement-choices 100"
+			cerr << "Example usage (local search w/ minimize): ls instances | "
+							"build/simple --order-by-size "
+							"--localsearch --minimize --randomize --threads 3 "
+							"--removal-attempts 100 --replacement-choices 100"
+					 << endl;
+			cerr << "Example usage (conflict optimizer): ls instances | build/simple "
+							"--order-by-size --co --threads 3 --max-attempts 100 --max-iters "
+							"100"
 					 << endl;
 		} else if (eq("--order-by-size"))
 			orderBySize = true;
@@ -65,6 +73,12 @@ int main(int argc, char* argv[]) {
 			randomize = true;
 		else if (eq("--localsearch"))
 			localsearch = true;
+		else if (eq("--max-iters"))
+			max_iters = stoi(next());
+		else if (eq("--max-attempts"))
+			max_attempts = stoi(next());
+		else if (eq("--co"))
+			conflict_optimize = true;
 		else if (eq("--removal-attempts"))
 			removal_attempts = stoi(next());
 		else if (eq("--minimize"))
@@ -127,6 +141,18 @@ int main(int argc, char* argv[]) {
 			size_t original_size = sol.size();
 			try_remove_all(inst, sol, randomize, removal_attempts, minimize,
 										 replacement_choices);
+			if (!sol.write_if_better(inst, filename)) {
+				cerr << "Did not see improvement to " << filename
+						 << " (previous:" << original_size << ", new:" << sol.size() << ")"
+						 << endl;
+			}
+		});
+	} else if (conflict_optimize) {
+		use_threads(files, num_threads, [&](string filename) {
+			Instance inst = Instance::read_file(filename);
+			Solution sol = Solution::read_file(filename);
+			size_t original_size = sol.size();
+			run_co(inst, sol, max_attempts, max_iters);
 			if (!sol.write_if_better(inst, filename)) {
 				cerr << "Did not see improvement to " << filename
 						 << " (previous:" << original_size << ", new:" << sol.size() << ")"
