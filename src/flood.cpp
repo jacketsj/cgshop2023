@@ -127,3 +127,20 @@ SimplePolygon flood(const Polygon& container, SimplePolygon start) {
 SimplePolygon flood(const Instance& inst, SimplePolygon start) {
 	return flood(inst.polygon(), start);
 }
+
+SimplePolygon flood(const Instance& inst, const Point& p) {
+	Point points[] = {p};
+	SimplePolygon start(points, points + 1);
+
+	return flood(inst.polygon(), start);
+}
+
+Solution flood_init(const Instance& inst) {
+	vector<SimplePolygon> result;
+	for (const auto& p : inst.polygon().outer_boundary())
+		result.push_back(flood(inst, p));
+	for (const auto& hole : inst.polygon().holes())
+		for (const auto& p : hole)
+			result.push_back(flood(inst, p));
+	return Solution(result);
+}

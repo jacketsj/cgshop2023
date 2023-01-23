@@ -45,3 +45,5 @@ struct Flooder {
 
 SimplePolygon flood(const Polygon& container, SimplePolygon start);
 SimplePolygon flood(const Instance& inst, SimplePolygon start);
+
+Solution flood_init(const Instance& inst);

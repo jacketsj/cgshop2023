@@ -3,6 +3,7 @@
 #include "cgshop2023_core/cpp_instance.hpp"
 #include "cgshop2023_core/verify.hpp"
 //#include "draw_solution.hpp"
+#include "flood.hpp"
 #include "globals.hpp"
 #include "localsearch.hpp"
 #include "triangulation.hpp"
@@ -51,6 +52,7 @@ int main(int argc, char* argv[]) {
 	unsigned max_iters = 10000;
 	bool only_verify = false;
 	bool simplify = false;
+	bool do_flood_init = false;
 	for (int i = 1; i < argc; ++i) {
 		string cur(argv[i]);
 		auto eq = [&](const auto& a) { return cur == string(a); };
@@ -71,8 +73,13 @@ int main(int argc, char* argv[]) {
 			cerr << "Example usage (simplify): ls instances | build/simple "
 							"--order-by-size --simplify --threads 3"
 					 << endl;
+			cerr << "Example usage (flood-init): ls instances | build/simple "
+							"--order-by-size --flood-init --threads 3"
+					 << endl;
 		} else if (eq("--order-by-size"))
 			orderBySize = true;
+		else if (eq("--flood-init"))
+			do_flood_init = true;
 		else if (eq("--init"))
 			init = true;
 		else if (eq("--threads"))
@@ -136,6 +143,23 @@ int main(int argc, char* argv[]) {
 			// size_t original_size = oldsol.size();
 			size_t original_size = 30;
 			Solution sol = basicTriangulation(inst);
+			if (localsearch) {
+				try_remove_all(inst, sol, randomize, removal_attempts, minimize,
+											 replacement_choices);
+			}
+			if (!sol.write_if_better(inst, filename)) {
+				cerr << "Did not see improvement to " << filename
+						 << " (previous:" << original_size << ", new:" << sol.size() << ")"
+						 << endl;
+			}
+		});
+	} else if (do_flood_init) {
+		use_threads(files, num_threads, [&](string filename) {
+			Instance inst = Instance::read_file(filename);
+			// Solution oldsol = Solution::read_file(filename);
+			// size_t original_size = oldsol.size();
+			size_t original_size = 30;
+			Solution sol = flood_init(inst);
 			if (localsearch) {
 				try_remove_all(inst, sol, randomize, removal_attempts, minimize,
 											 replacement_choices);
