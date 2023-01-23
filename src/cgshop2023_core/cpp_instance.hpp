@@ -69,6 +69,14 @@ public:
 	static Solution read(std::istream& input);
 	static Solution read_file(const std::string& name);
 	bool write_if_better(const Instance& inst, const std::string& name);
+	void simplify() {
+		std::vector<SimplePolygon> newPolygons;
+		for (auto& poly : polygons()) {
+			if (area(Polygon(poly)) > 0)
+				newPolygons.push_back(poly);
+		}
+		m_polygons = newPolygons;
+	}
 
 	[[nodiscard]] const std::vector<SimplePolygon>& polygons() const noexcept {
 		return m_polygons;

@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
 	unsigned max_attempts = 1000;
 	unsigned max_iters = 10000;
 	bool only_verify = false;
+	bool simplify = false;
 	for (int i = 1; i < argc; ++i) {
 		string cur(argv[i]);
 		auto eq = [&](const auto& a) { return cur == string(a); };
@@ -66,6 +67,9 @@ int main(int argc, char* argv[]) {
 					 << endl;
 			cerr << "Example usage (verify): ls instances | build/simple "
 							"--order-by-size --verify --threads 3"
+					 << endl;
+			cerr << "Example usage (simplify): ls instances | build/simple "
+							"--order-by-size --simplify --threads 3"
 					 << endl;
 		} else if (eq("--order-by-size"))
 			orderBySize = true;
@@ -89,6 +93,8 @@ int main(int argc, char* argv[]) {
 			minimize = true;
 		else if (eq("--verify"))
 			only_verify = true;
+		else if (eq("--simplify"))
+			simplify = true;
 		else if (eq("--replacement-choices"))
 			replacement_choices = stoi(next());
 		else if (eq("--verbose") || eq("-v"))
@@ -168,6 +174,22 @@ int main(int argc, char* argv[]) {
 	} else if (only_verify) {
 		Instance inst = Instance::read_file(filename);
 		Solution sol = Solution::read_file(filename);
+		SolutionVerifier sv(&inst, &sol);
+		cerr << "Verify result: " << (sv.verify() ? "success" : "failed (invalid)")
+				 << endl;
+		if (sv.error_message().has_value()) {
+			cerr << "Error message: " << sv.error_message().value() << endl;
+		}
+	} else if (simplify) {
+		Instance inst = Instance::read_file(filename);
+		Solution sol = Solution::read_file(filename);
+		size_t original_size = sol.size();
+		sol.simplify();
+		if (sol.write_if_better(inst, filename)) {
+			cerr << "Saw improvement after simplification to " << filename
+					 << " (previous:" << original_size << ", new:" << sol.size() << ")"
+					 << endl;
+		}
 		SolutionVerifier sv(&inst, &sol);
 		cerr << "Verify result: " << (sv.verify() ? "success" : "failed (invalid)")
 				 << endl;
