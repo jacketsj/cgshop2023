@@ -173,8 +173,6 @@ int main(int argc, char* argv[]) {
 				 << endl;
 		if (sv.error_message().has_value()) {
 			cerr << "Error message: " << sv.error_message().value() << endl;
-		} else {
-			sol.write(cout, out_name);
 		}
 	}
 
