@@ -203,6 +203,9 @@ void conflict_optimizer::remove_random(size_t count) {
 void conflict_optimizer::add_random(size_t count) {
 	shuffle(uncovered.begin(), uncovered.end(), g);
 	for (size_t i = 0; i < count && i < uncovered.size(); ++i) {
+		// TODO only add each one if it will expand the current cover (BEFORE
+		// running the flood algorithm)
+		// keep a running CGAL::join, compute area each time
 		cover.push_back(greedy_flood(inst, uncovered[i]));
 	}
 }
